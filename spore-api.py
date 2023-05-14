@@ -8,6 +8,10 @@ app = Flask(__name__)
 def hello():
     return 'Hello World!'
 
+@app.route('/avax-holders')
+def avax_holders():
+    return '6000'
+
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5001))

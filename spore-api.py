@@ -14,7 +14,8 @@ def hello():
 @app.route('/avax-holders',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def avax_holders():
-    return '6000'
+    return '2082'
+
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.

@@ -1,18 +1,20 @@
 import os
 
-from flask import Flask
+from flask import Flask, jsonify
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+CORS(app, support_credentials=True)
 
 @app.route('/')
+@cross_origin(supports_credentials=True)
 def hello():
-    return 'Hello World!'
+    return jsonify({'success': 'ok'})
 
 @app.route('/avax-holders',methods=['GET'])
+@cross_origin(supports_credentials=True)
 def avax_holders():
-    response = Flask.jsonify({'avax-holders': '6000'})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+    return '6000'
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.

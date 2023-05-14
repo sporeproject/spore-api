@@ -8,9 +8,11 @@ app = Flask(__name__)
 def hello():
     return 'Hello World!'
 
-@app.route('/avax-holders')
+@app.route('/avax-holders',methods=['GET'])
 def avax_holders():
-    return '6000'
+    response = Flask.jsonify({'avax-holders': '6000'})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.

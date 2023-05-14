@@ -1,1 +1,1 @@
-web: gunicorn hello_world:app --workers=4
+web: gunicorn spore-api:app --workers=4

@@ -1,5 +1,5 @@
 import os
-
+import json
 from flask import Flask, jsonify
 from flask_cors import CORS, cross_origin
 
@@ -16,6 +16,13 @@ def hello():
 def avax_holders():
     return '2082'
 
+@app.route('/contributors',methods=['GET'])
+@cross_origin(supports_credentials=True)
+def current_contributors():
+    #open json file containing contributors
+    with open('contributors.json') as json_file:
+        json_data = json.load(json_file)
+        return jsonify(json_data)
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.

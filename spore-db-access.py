@@ -8,17 +8,34 @@ from web3._utils.filters import construct_event_filter_params
 from web3._utils.events import get_event_data
 from eth_abi.codec import ABICodec
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
-with open('spore_abi.json') as abi:
+with open('abi/spore_abi.json') as abi:
     spore_abi = json.load(abi)
 
 
 avax_url= os.getenv("RPC_URL", "https://api.avax.network/ext/bc/C/rpc")
 bsc_url="https://bsc-dataseed1.defibit.io/"
 
-
 spore_address_avalanche="0x6e7f5C0b9f4432716bDd0a77a3601291b9D9e985"
 spore_address_bsc="0x33A3d962955A3862C8093D1273344719f03cA17C"
+
+
+def verify_db_connection():
+    try:
+        conn = psycopg2.connect(database=os.getenv("DATABASE_NAME", "spore_db"),
+                                host=os.getenv("DATABASE_HOST", "localhost"),
+                                user=os.getenv("DATABASE_USER", "postgres"),
+                                password=os.getenv("DATABASE_PASSWORD", ""),
+                                port=os.getenv("DATABASE_PORT", "5432"))
+        conn.close()
+        return True
+    except psycopg2.Error as e:
+        print("Unable to connect to the database")
+        print(e.pgerror)
+        print(e.diag.message_detail)
+        return False
 
 def create_table(table_name):
     conn = psycopg2.connect(database=os.getenv("DATABASE_NAME", "spore_db"),
@@ -156,6 +173,8 @@ def initialize_process(chain):
         return initial_block,current_block
 
 def main(chain):
+    verify_db_connection()
+    exit()
     web3, event=connect_and_get_event(chain)
     latest_block= web3.eth.get_block('latest')['number']
     initial_block,current_block= initialize_process(chain)

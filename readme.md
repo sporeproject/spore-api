@@ -13,6 +13,8 @@ dokku postgres:info spore_db #copy the username and password and add it to your 
 
 ### v0.0.4
 - Upgraded to postgres DB on a remote location
+- Indexes all `Bought` events, searches for the price of all NFTs
+- When you call `last-indexed` in the api, it will tell you the latest synced block 
 
 ### v0.0.3
 - Returns a GET response from the Flask database

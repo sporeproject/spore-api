@@ -14,8 +14,6 @@ def verify_db_connection():
         return True
     except psycopg2.Error as e:
         print("Unable to connect to the database")
-        print(e.pgerror)
-        print(e.diag.message_detail)
         return False
 
 def initialize_connection():
@@ -28,8 +26,6 @@ def initialize_connection():
         return conn
     except psycopg2.Error as e:
         print("Unable to connect to the database")
-        print(e.pgerror)
-        print(e.diag.message_detail)
         return False
 
 def last_indexed_nft_control():

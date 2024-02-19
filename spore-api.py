@@ -1,10 +1,11 @@
 import os
 import json
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 import spore_api_utils as api_utils
 
-
+from cmc_api import handler  # Import the function from cmc_api.py
+    
 app = Flask(__name__)
 CORS(app, support_credentials=True)
 
@@ -36,6 +37,21 @@ def last_indexed():
     if nft_buys_last_indexed == 0 and nft_prices_last_indexed == 0:
         return jsonify({'error': 'No data indexed yet'}), 204
     return jsonify({'nft_buys_last_indexed': nft_buys_last_indexed, 'nft_prices_last_indexed': nft_prices_last_indexed})
+    
+#https://spore.earth/api?q=name
+@app.route('/api', methods=['GET'])  # New route for CoinMarketCap data
+@cross_origin(supports_credentials=True)
+def cmc_api():
+    try:
+        q = request.args.get('q')
+        res= handler(q)
+        if res:
+            return res
+        else:
+            return jsonify({'error': 'Invalid request1'}), 500
+    except Exception as e:
+        print (f"Error: {jsonify(e)}")
+        return jsonify({'error': 'Invalid request2'}), 500
     
 
 if __name__ == '__main__':

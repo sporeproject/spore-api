@@ -12,9 +12,9 @@ dokku postgres:info spore_db #copy the username and password and add it to your 
 ## To run this project
 
   1. **Install the required packages** The Spore Api runs in a flask app using python 3.10, for installing the required packages install pip first and run:
-   ```
-      pip install -r requirements.txt
-   ```
+       ```
+       pip install -r requirements.txt
+       ```
   2. **Running the Spore API**:
      - Navigate to the cloned `spore-api` directory.
      - Run the API using Python version 3.10.9:

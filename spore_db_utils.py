@@ -100,6 +100,16 @@ def get_last_block(table_name):
     conn.close()
     return last_block
 
+def get_ava_latest_block():
+    try:
+        chain_url=  "https://api.avax.network/ext/bc/C/rpc"
+        web3 = Web3(Web3.HTTPProvider(chain_url))
+        web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        latest_block= web3.eth.get_block('latest')['number']
+        return latest_block
+    except Exception as e:
+        print(e)
+        return False
 
 def bought_event_filter(fromBlock,toBlock, web3, event):
     abi = event._get_event_abi()
@@ -206,6 +216,9 @@ def get_token_price(tokenId):
 
 def index_nft_price_data():
     conn = initialize_connection()
+    if not conn:
+        print("Unable to connect to the database")
+        return False
     c= conn.cursor()
     current_block = get_last_block("nft_prices")
     chain_url=  "https://api.avax.network/ext/bc/C/rpc"
@@ -233,4 +246,40 @@ def index_nft_price_data():
         conn.close()
     else:
         print("All blocks indexed")
-    
+
+
+def nft_get_total_volume():
+    conn = initialize_connection()
+    c= conn.cursor()
+    query = "SELECT SUM(CAST(value AS DECIMAL)) FROM nft_buys"
+    c.execute(query)
+    result = c.fetchone()
+    total_volume = result[0]
+    conn.close()
+    return int(total_volume)/10**18
+
+def nft_get_floor_price():
+    conn = initialize_connection()
+    c= conn.cursor()
+    #select min price that is not 0
+    query = "SELECT MIN(CAST(price AS DECIMAL)) FROM nft_prices WHERE CAST(price AS DECIMAL) != 0"
+    c.execute(query)
+    result = c.fetchone()
+    floor_price = result[0]
+    conn.close()
+    return int(floor_price)/10**18
+
+def nft_get_last_sale():
+    conn = initialize_connection()
+    c= conn.cursor()
+    query = "SELECT value FROM nft_buys ORDER BY id DESC LIMIT 1"
+    c.execute(query)
+    result = c.fetchone()
+    last_sale = result[0]
+    conn.close()
+    return int(last_sale)/10**18
+
+def update_nft_db():
+    verify_db_connection()
+    index_nft_price_data()
+    index_nft_bought_data()

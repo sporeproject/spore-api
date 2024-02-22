@@ -28,12 +28,10 @@ spore_address_bsc="0x33A3d962955A3862C8093D1273344719f03cA17C"
 #     conn.close()
 
 
-def main():
+def update_db():
     db_utils.verify_db_connection()
     db_utils.index_nft_price_data()
     db_utils.index_nft_bought_data()
-
-main()
 
 
 

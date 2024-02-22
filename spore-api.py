@@ -3,6 +3,7 @@ import json
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 import spore_api_utils as api_utils
+import spore_db_utils as db_utils
 
 from cmc_api import handler  # Import the function from cmc_api.py
     
@@ -37,8 +38,7 @@ def last_indexed():
     if nft_buys_last_indexed == 0 and nft_prices_last_indexed == 0:
         return jsonify({'error': 'No data indexed yet'}), 204
     return jsonify({'nft_buys_last_indexed': nft_buys_last_indexed, 'nft_prices_last_indexed': nft_prices_last_indexed})
-    
-#https://spore.earth/api?q=name
+
 @app.route('/api', methods=['GET'])  # New route for CoinMarketCap data
 @cross_origin(supports_credentials=True)
 def cmc_api():
@@ -53,6 +53,44 @@ def cmc_api():
         print (f"Error: {jsonify(e)}")
         return jsonify({'error': 'Invalid request2'}), 500
     
+@app.route('/nft/get_total_volume',methods=['GET'])
+@cross_origin(supports_credentials=True)
+def get_total_volume():
+    if not api_utils.verify_db_connection():
+        return jsonify({'error': 'Database not connected'}), 502
+    total_volume = db_utils.nft_get_total_volume()
+    if total_volume == 0:
+        return jsonify({'error': 'No data indexed yet'}), 204
+    return jsonify({'total_volume': total_volume})
+
+@app.route('/nft/get_floor_price',methods=['GET'])
+@cross_origin(supports_credentials=True)
+def get_floor_price():
+    if not api_utils.verify_db_connection():
+        return jsonify({'error': 'Database not connected'}), 502
+    floor_price = db_utils.nft_get_floor_price()
+    if floor_price == 0:
+        return jsonify({'error': 'No data indexed yet'}), 204
+    return jsonify({'floor_price': floor_price})
+
+@app.route('/nft/get_last_sale',methods=['GET'])
+@cross_origin(supports_credentials=True)
+def get_last_sale():
+    if not api_utils.verify_db_connection():
+        return jsonify({'error': 'Database not connected'}), 502
+    last_sale = db_utils.nft_get_last_sale()
+    if last_sale == 0:
+        return jsonify({'error': 'No data indexed yet'}), 204
+    return jsonify({'last_sale': last_sale})
+
+@app.route('/nft/update_nft_db',methods=['GET'])
+@cross_origin(supports_credentials=True)
+def update_nft_db():
+    if not api_utils.verify_db_connection():
+        return jsonify({'error': 'Database not connected'}), 502
+    db_utils.index_nft_price_data()
+    db_utils.index_nft_bought_data()
+    return jsonify({'success': 'NFT data updating', 'status': '202'})
 
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.

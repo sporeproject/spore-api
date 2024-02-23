@@ -20,7 +20,7 @@ tokens = [
 def populate(token):
     # Connect to networks
 
-    ava = Web3(Web3.HTTPProvider('https://api.avax.network/ext/bc/C/rpc'))
+    ava = Web3(Web3.HTTPProvider('https://rpc.ankr.com/avalanche-c'))
 
     contract = ava.eth.contract(address=token['id'], abi=abi_erc20)
     sporeAva = {}
@@ -40,7 +40,7 @@ def handler(req):
         spore = populate(tokens[0])
         # spore = find_token(tokens, { 'key': 'symbol', 'value': 'spore' })
         bsc = Web3(Web3.HTTPProvider('https://bsc-dataseed1.binance.org'))
-        ava = Web3(Web3.HTTPProvider('https://api.avax.network/ext/bc/C/rpc'))
+        ava = Web3(Web3.HTTPProvider('https://rpc.ankr.com/avalanche-c'))
         contract_bsc = bsc.eth.contract(address=tokens[0]['bsc'], abi=abi_erc20)
         contract_ava = ava.eth.contract(address=tokens[0]['id'], abi=abi_erc20)
         bscBurned = contract_bsc.functions.balanceOf(tokens[0]['bsc']).call()

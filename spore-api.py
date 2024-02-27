@@ -92,9 +92,22 @@ def update_nft_db():
     db_utils.index_nft_bought_data()
     return jsonify({'success': 'NFT data updating', 'status': '202'})
 
+
+@app.route('/nft/get_data',methods=['GET'])
+@cross_origin(supports_credentials=True)
+def get_nft_data():
+    if not api_utils.verify_db_connection():
+        return jsonify({'error': 'Database not connected'}), 502
+    nft_data = db_utils.nft_get_data()
+    if nft_data == 0:
+        return jsonify({'error': 'No data indexed yet'}), 204
+    return jsonify(nft_data)
+
+
+
+
 if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.
     port = int(os.environ.get('PORT', 5001))
     app.run(host='127.0.0.1', port=port)
 
-    

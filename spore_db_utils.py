@@ -283,3 +283,14 @@ def update_nft_db():
     verify_db_connection()
     index_nft_price_data()
     index_nft_bought_data()
+
+def nft_get_data():
+    conn = initialize_connection()
+    c= conn.cursor()
+    query = "SELECT tokenid, price FROM nft_prices WHERE price::numeric > 0"   
+    c.execute(query)
+    result = c.fetchall()
+    conn.close()
+    data = [[item[0], int(item[1])] for item in result]
+    return data
+

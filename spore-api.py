@@ -98,11 +98,13 @@ def update_nft_db():
 def get_nft_data():
     if not api_utils.verify_db_connection():
         return jsonify({'error': 'Database not connected'}), 502
-    nft_data = db_utils.nft_get_data()
-    if nft_data == 0:
-        return jsonify({'error': 'No data indexed yet'}), 204
-    return jsonify(nft_data)
-
+    try:
+        q = request.args.get('q')
+        nft_data= db_utils.nft_get_data(q)
+        return nft_data
+    except Exception as e:
+        print (f"Error: {jsonify(e)}")
+        return jsonify({'error': 'Invalid request2'}), 500
 
 
 

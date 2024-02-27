@@ -6,6 +6,8 @@ from web3._utils.filters import construct_event_filter_params
 from web3._utils.events import get_event_data
 from eth_abi.codec import ABICodec
 import json
+from flask import jsonify
+
 
 load_dotenv()
 
@@ -284,7 +286,8 @@ def update_nft_db():
     index_nft_price_data()
     index_nft_bought_data()
 
-def nft_get_data():
+def nft_get_all_data():
+
     conn = initialize_connection()
     c= conn.cursor()
     query = "SELECT tokenid, price FROM nft_prices WHERE price::numeric > 0"   
@@ -293,4 +296,22 @@ def nft_get_data():
     conn.close()
     data = [[item[0], int(item[1])] for item in result]
     return data
+
+def nft_get_id_data(id):
+        conn = initialize_connection()
+        c= conn.cursor()
+        query = "SELECT tokenid, price FROM nft_prices WHERE tokenid = %s"   
+        c.execute(query, (id,))
+        result = c.fetchone()
+        conn.close()
+        data = [result[0], int(result[1])]
+        return data
+
+def nft_get_data(req):
+    if not req:
+        resp= nft_get_all_data()
+    else:
+        resp= nft_get_id_data(req)
+    return jsonify(resp)
+
 

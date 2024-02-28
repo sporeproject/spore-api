@@ -9,6 +9,7 @@ import json
 from flask import jsonify
 
 
+
 load_dotenv()
 
 def verify_db_connection():
@@ -169,11 +170,11 @@ def index_nft_bought_data():
     web3, event = connect_and_get_Bought_event()
     current_block = get_last_block("nft_buys")
     latest_block= web3.eth.get_block('latest')['number']
-    print(f"Last block indexed: {latest_block}, Current block: {current_block}")
+    print(f"Last block indexed: {latest_block}, Current block: {current_block}", flush=True)
     initial_block = 41756273
     while current_block<latest_block:
         if current_block==latest_block:
-            print("All blocks indexed")
+            print("All blocks indexed", flush=True)
             break
         if current_block>initial_block:
             from_block=current_block+1
@@ -184,9 +185,11 @@ def index_nft_bought_data():
         else:
             to_block=current_block+2047
 
-        print("indexing from {} to {}".format(from_block, to_block))
+        print("indexing from {} to {}".format(from_block, to_block), flush=True)
         process_nft_buy_events(web3, event, from_block, to_block)
         current_block=to_block
+    print ("All blocks indexed", flush=True)
+    return True
     
 def add_first_data_to_nft_prices():
     conn = initialize_connection()
@@ -247,7 +250,8 @@ def index_nft_price_data():
         conn.commit()
         conn.close()
     else:
-        print("All blocks indexed")
+        print("All blocks indexed", flush=True)
+    return True
 
 
 def nft_get_total_volume():
@@ -281,10 +285,29 @@ def nft_get_last_sale():
     conn.close()
     return int(last_sale)/10**18
 
-def update_nft_db():
-    verify_db_connection()
-    index_nft_price_data()
-    index_nft_bought_data()
+def set_nft_indexing_json(status= False):
+    data = {
+        "indexing_in_progress": status
+    }
+    with open('nft_indexing.json', 'w+') as file:
+        json.dump(data, file)
+
+def get_nft_indexing():
+    if not os.path.exists('nft_indexing.json'):
+        set_nft_indexing_json()
+    with open('nft_indexing.json', 'r') as file:
+        data = json.load(file)
+    return data["indexing_in_progress"]
+
+
+def index_data():
+    try:
+        index_nft_price_data()
+        index_nft_bought_data()
+    except Exception as e:
+        print(e)
+        return False
+    return True
 
 def nft_get_all_data():
 
@@ -313,5 +336,4 @@ def nft_get_data(req):
     else:
         resp= nft_get_id_data(req)
     return jsonify(resp)
-
 

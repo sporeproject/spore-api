@@ -4,6 +4,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 import spore_api_utils as api_utils
 import spore_db_utils as db_utils
+import threading
 
 from cmc_api import handler  # Import the function from cmc_api.py
     
@@ -83,14 +84,38 @@ def get_last_sale():
         return jsonify({'error': 'No data indexed yet'}), 204
     return jsonify({'last_sale': last_sale})
 
+
+
 @app.route('/nft/update_nft_db',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def update_nft_db():
-    if not api_utils.verify_db_connection():
-        return jsonify({'error': 'Database not connected'}), 502
-    db_utils.index_nft_price_data()
-    db_utils.index_nft_bought_data()
-    return jsonify({'success': 'NFT data updating', 'status': '202'})
+    last_block = db_utils.get_last_block("nft_buys")
+    current_block = db_utils.get_ava_latest_block()
+    indexing_in_progress = db_utils.get_nft_indexing()
+    if last_block+100<current_block:
+        if not indexing_in_progress:
+            db_utils.set_nft_indexing_json(True)
+            thread = threading.Thread(target=db_utils.index_data)
+            thread.start()
+            return jsonify({
+                "status": "indexing",
+                "last_block": last_block,
+                "current_block": current_block
+            }), 201
+        if indexing_in_progress:
+            return jsonify({
+                "status": "indexing",
+                "last_block": last_block,
+                "current_block": current_block
+            }), 202
+    else:
+        db_utils.set_nft_indexing_json(False)
+        return jsonify({
+            "status": "up to date",
+            "last_block": last_block,
+            "current_block": current_block
+        }), 200
+
 
 
 @app.route('/nft/get_data',methods=['GET'])

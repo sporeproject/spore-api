@@ -7,6 +7,10 @@ from web3._utils.events import get_event_data
 from eth_abi.codec import ABICodec
 import json
 from flask import jsonify
+import threading
+import time
+
+
 
 
 
@@ -285,9 +289,12 @@ def nft_get_last_sale():
     conn.close()
     return int(last_sale)/10**18
 
-def set_nft_indexing_json(status= False):
+def set_nft_indexing_json(state= False, block_started=0, status="initialized"):
     data = {
-        "indexing_in_progress": status
+        "indexing_in_progress": state,
+        "block_started": block_started,
+        "status": status
+
     }
     with open('nft_indexing.json', 'w+') as file:
         json.dump(data, file)
@@ -297,20 +304,58 @@ def get_nft_indexing():
         set_nft_indexing_json()
     with open('nft_indexing.json', 'r') as file:
         data = json.load(file)
-    return data["indexing_in_progress"]
+    return data["indexing_in_progress"], data["block_started"], data["status"]
 
 
 def index_data():
     try:
         index_nft_price_data()
         index_nft_bought_data()
+        current_block = get_ava_latest_block()
+        set_nft_indexing_json(True, current_block, "indexed")
     except Exception as e:
         print(e)
+        current_block = get_ava_latest_block()
+        set_nft_indexing_json(True, current_block, "reload")
         return False
     return True
 
-def nft_get_all_data():
+# class IndexingThread(threading.Thread):
+#     def __init__(self, target=None, daemon=False):
+#         super(IndexingThread, self).__init__(target=target, daemon=daemon)
+#         self.stop = False
 
+#     def run(self):
+#         while not self.stop:
+#             print("Thread is running...")
+#             time.sleep(1)
+
+#     def stop_thread(self):
+#         self.stop = True
+
+def nft_update_db():
+    last_block = get_last_block("nft_buys")
+    current_block = get_ava_latest_block()
+    (indexing_in_progress, block_started, status) = get_nft_indexing()
+    http_status = 200 
+    print(f"last_block: {last_block}, current_block: {current_block}, indexing_in_progress: {indexing_in_progress}, block_started: {block_started}, status: {status}")
+    if last_block+100<current_block:
+        if not indexing_in_progress and block_started+120<current_block:
+            set_nft_indexing_json(True, current_block, "indexing")
+            thread= threading.Thread(target=index_data, daemon=True)
+            thread.start()
+            http_status = 201
+        elif indexing_in_progress:
+            http_status = 202
+        
+    else:
+        set_nft_indexing_json(False, block_started, "indexed")
+    (indexing_in_progress, block_started, status) = get_nft_indexing()
+    return {
+        "last_block": last_block, "http_status": http_status}
+
+
+def nft_get_all_data():
     conn = initialize_connection()
     c= conn.cursor()
     query = "SELECT tokenid, price FROM nft_prices WHERE price::numeric > 0"   

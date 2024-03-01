@@ -89,32 +89,44 @@ def get_last_sale():
 @app.route('/nft/update_nft_db',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def update_nft_db():
-    last_block = db_utils.get_last_block("nft_buys")
+    (indexing_in_progress, block_started, status) = db_utils.get_nft_indexing()
+    
     current_block = db_utils.get_ava_latest_block()
-    indexing_in_progress = db_utils.get_nft_indexing()
-    if last_block+100<current_block:
-        if not indexing_in_progress:
-            db_utils.set_nft_indexing_json(True)
-            thread = threading.Thread(target=db_utils.index_data)
-            thread.start()
-            return jsonify({
-                "status": "indexing",
-                "last_block": last_block,
-                "current_block": current_block
-            }), 201
-        if indexing_in_progress:
-            return jsonify({
-                "status": "indexing",
-                "last_block": last_block,
-                "current_block": current_block
-            }), 202
-    else:
-        db_utils.set_nft_indexing_json(False)
-        return jsonify({
-            "status": "up to date",
-            "last_block": last_block,
-            "current_block": current_block
-        }), 200
+    try:
+        q = request.args.get('q')
+        req_response=500
+        if q == "consult":
+            if not indexing_in_progress and block_started+120<current_block:
+                status = "reload"
+                db_utils.set_nft_indexing_json(False, 0, status)
+            (indexing_in_progress, block_started, status) = db_utils.get_nft_indexing()
+            json_response = {
+                'indexing_in_progress': indexing_in_progress,
+                'block_started': block_started,
+                'last_block': current_block,
+                'status': status
+                }
+            req_response=200
+
+        else:
+            thread_response= db_utils.nft_update_db()
+            (indexing_in_progress, block_started, status) = db_utils.get_nft_indexing()
+            json_response = {
+            'indexing_in_progress': indexing_in_progress,
+            'block_started': block_started,
+            'last_block': thread_response['last_block'],
+            'status': status
+            }
+            req_response=thread_response['http_status']
+        return jsonify(json_response), req_response
+    except Exception as e:
+        print (f"Error: {jsonify(e)}")
+        return jsonify({'error': 'Invalid request2'}), 500
+
+
+
+
+    
 
 
 
@@ -133,8 +145,14 @@ def get_nft_data():
 
 
 
-if __name__ == '__main__':
-    # Bind to PORT if defined, otherwise default to 5000.
-    port = int(os.environ.get('PORT', 5001))
-    app.run(host='127.0.0.1', port=port)
+# if __name__ == '__main__':
+#     # Bind to PORT if defined, otherwise default to 5000.
+#     port = int(os.environ.get('PORT', 5001))
+#     app.run(host='127.0.0.1', port=port)
 
+if __name__ == '__main__':
+    # Bind to PORT if defined, otherwise default to 5000.s
+    port = int(os.environ.get('PORT', 5001))
+    app.debug = True  # Enable debugging
+    app.env = 'development'  # Set the environment to development
+    app.run(host='127.0.0.1', port=port)

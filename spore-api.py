@@ -103,7 +103,7 @@ def update_nft_db():
             json_response = {
                 'indexing_in_progress': indexing_in_progress,
                 'block_started': block_started,
-                'last_block': current_block,
+                'current_block': current_block,
                 'status': status
                 }
             req_response=200
@@ -114,7 +114,7 @@ def update_nft_db():
             json_response = {
             'indexing_in_progress': indexing_in_progress,
             'block_started': block_started,
-            'last_block': thread_response['last_block'],
+            'current_block': current_block,
             'status': status
             }
             req_response=thread_response['http_status']

@@ -312,11 +312,11 @@ def index_data():
         index_nft_price_data()
         index_nft_bought_data()
         current_block = get_ava_latest_block()
-        set_nft_indexing_json(True, current_block, "indexed")
+        set_nft_indexing_json(False, current_block, "indexed")
     except Exception as e:
         print(e)
         current_block = get_ava_latest_block()
-        set_nft_indexing_json(True, current_block, "reload")
+        set_nft_indexing_json(False, current_block, "reload")
         return False
     return True
 
@@ -345,7 +345,7 @@ def nft_update_db():
             thread= threading.Thread(target=index_data, daemon=True)
             thread.start()
             http_status = 201
-        elif indexing_in_progress:
+        elif indexing_in_progress and block_started+120>=current_block:
             http_status = 202
         
     else:

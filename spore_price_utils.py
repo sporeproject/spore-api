@@ -116,44 +116,6 @@ def get_balance(web3, contract_address, wallet, abi):
     except Exception:
         return Decimal(0)
     
-    
-def calc_avax():
-    spore_address = get_checksum_address(avax_tokens["spore"]["address"][43114])
-    wavax_address = get_checksum_address(avax_tokens["wavax"]["address"][43114])
-    
-    spore_balance = get_balance(avax_web3, spore_address, avax_LP, spore_abi)
-    wavax_balance = get_balance(avax_web3, wavax_address, avax_LP, spore_abi)
-
-    avax_usdt_price = fetch_asset_price("avalanche-2")
-    usd_value = wavax_balance * avax_usdt_price  # Compute USD value
-
-    spore_price_per_trillion = (wavax_balance * avax_usdt_price) / (spore_balance * Decimal(1e3))
-
-    return {
-        "SporeBal": spore_balance,
-        "Usd": usd_value,  # Include 'Usd' key
-        "AvaxPrice": avax_usdt_price,
-        "WavaxBal": wavax_balance,
-        "SporePriceTrillion": spore_price_per_trillion
-    }
-
-def calc_bsc():
-    spore_address = get_checksum_address(bsc_tokens["spore"]["address"][56])
-    wbnb_address = get_checksum_address(bsc_tokens["wbnb"]["address"][56])
-
-    spore_balance = get_balance(bsc_web3, spore_address, bsc_LP, spore_abi)
-    bnb_balance = get_balance(bsc_web3, wbnb_address, bsc_LP, spore_abi)
-
-    bsc_usdt_price = fetch_asset_price("binancecoin")
-    spore_price_per_trillion = (bnb_balance * bsc_usdt_price) / (spore_balance * Decimal(1e3))
-
-    return {
-        "SporeBal": spore_balance,
-        "BscPrice": bsc_usdt_price,
-        "BnbBal": bnb_balance,
-        "SporePriceTrillion": spore_price_per_trillion
-    }
-
 
 def calc():
 

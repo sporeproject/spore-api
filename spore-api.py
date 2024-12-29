@@ -4,6 +4,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 import spore_api_utils as api_utils
 import spore_db_utils as db_utils
+import spore_price_utils as price_utils
 import threading
 
 from cmc_api import handler  # Import the function from cmc_api.py
@@ -28,6 +29,12 @@ def current_contributors():
     with open('contributors.json') as json_file:
         json_data = json.load(json_file)
         return jsonify(json_data)
+
+@app.route('/token/prices',methods=['GET'])
+@cross_origin(supports_credentials=True)
+def get_token_prices():
+    data=price_utils.get_token_prices()
+    return jsonify(data)
 
 @app.route('/last-indexed',methods=['GET'])
 @cross_origin(supports_credentials=True)
@@ -122,12 +129,6 @@ def update_nft_db():
     except Exception as e:
         print (f"Error: {jsonify(e)}")
         return jsonify({'error': 'Invalid request2'}), 500
-
-
-
-
-    
-
 
 
 @app.route('/nft/get_data',methods=['GET'])

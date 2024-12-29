@@ -33,7 +33,7 @@ def current_contributors():
 @app.route('/token/prices',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def get_token_prices():
-    data=price_utils.get_token_prices()
+    data=price_utils.calc()
     return jsonify(data)
 
 @app.route('/last-indexed',methods=['GET'])

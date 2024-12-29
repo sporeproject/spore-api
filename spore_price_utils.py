@@ -5,6 +5,7 @@ import requests
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from decimal import Decimal
+import os
 
 # Token configurations
 avax_tokens = {
@@ -117,30 +118,47 @@ def get_balance(web3, contract_address, wallet, abi):
         return Decimal(0)
 
 def read_price_indexing_file():
-    try:
-        with open('price_indexing.json', 'r') as file:
-            return json.load(file)
-    except FileNotFoundError:
-        # If the file does not exist, create it with default values
-        default_data = {"last_timestamp": 0, "price_avax": 0, "price_bsc": 0}
-        with open('price_indexing.json', 'w') as file:
+    file_exists = os.path.isfile('price_indexing.json')
+    if not file_exists:
+        default_data = {"last_timestamp": "0", "price_avax": "0", "price_bsc": "0", "price_diff": "0", "market_cap": "0"}
+        with open('price_indexing.json', 'w+') as file:
             json.dump(default_data, file)
         return default_data
+    else:
+        with open('price_indexing.json', 'r') as file:
+            return json.load(file)
+
 
 def write_price_indexing_file(data):
-    with open('price_indexing.json', 'w') as file:
+    with open('price_indexing.json', 'w+') as file:
         json.dump(data, file)
+
+def fetch_market_cap(coin_id):
+    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart?vs_currency=usd&days=1&interval=daily"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        market_caps = response.json().get('market_caps', [])
+        if market_caps:
+            market_cap = market_caps[-1][-1]
+            return "{:,.0f}".format(market_cap)  # Format with commas
+        return "0"
+    except Exception as e:
+        print(f"Error fetching market cap: {e}")
+        return "0"
 
 def calc():
 
     current_time = time.time()
     data = read_price_indexing_file()
 
-    if current_time - data["last_timestamp"] < 300:
+
+    if current_time - float(data["last_timestamp"]) < 120:
         return {
-            "AvaxSporePrice": format(data["price_avax"], '.8f'),
-            "BscSporePrice": format(data["price_bsc"], '.8f'),
-            "PriceDiff": "0.00",
+            "AvaxSporePrice": data["price_avax"],
+            "BscSporePrice": data["price_bsc"],
+            "PriceDiff": data["price_diff"],
+            "MarketCap": data["market_cap"]   
         }
 
     spore_address_avax = get_checksum_address(avax_tokens["spore"]["address"][43114])
@@ -172,11 +190,17 @@ def calc():
 
     percent_difference = "{:.2f}".format(abs(percent_difference_raw))
 
+    market_cap = fetch_market_cap("spore")
+
+
 
     with open('price_indexing.json', 'w+') as file:
-        data["last_timestamp"] = current_time
-        data["price_avax"] = spore_price_avax
-        data["price_bsc"] = bsc_spore_price
+        data["last_timestamp"] = str(current_time)
+        data["price_avax"] = format(spore_price_avax*Decimal(1e6), '.8f')
+        data["price_bsc"] = format(bsc_spore_price*Decimal(1e6), '.8f')
+        data["price_diff"] = percent_difference
+        data["market_cap"] = market_cap
+        
         json.dump(data, file)
 
 
@@ -185,10 +209,6 @@ def calc():
         "AvaxSporePrice": format(spore_price_avax*Decimal(1e6), '.8f'),
         "BscSporePrice": format(bsc_spore_price*Decimal(1e6), '.8f'),
         "PriceDiff": percent_difference,
+        "MarketCap": market_cap
     }
 
-def report_arbitrage():
-    data = calc()
-    print(f"AVAX Spore Price: {data['AvaxSporePrice']}")
-    print(f"BSC Spore Price: {data['BscSporePrice']}")
-    print(f"Price Difference: {data['PriceDiff']}%")

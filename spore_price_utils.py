@@ -115,9 +115,33 @@ def get_balance(web3, contract_address, wallet, abi):
         return Decimal(balance) / Decimal(1e9)
     except Exception:
         return Decimal(0)
-    
+
+def read_price_indexing_file():
+    try:
+        with open('price_indexing.json', 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        # If the file does not exist, create it with default values
+        default_data = {"last_timestamp": 0, "price_avax": 0, "price_bsc": 0}
+        with open('price_indexing.json', 'w') as file:
+            json.dump(default_data, file)
+        return default_data
+
+def write_price_indexing_file(data):
+    with open('price_indexing.json', 'w') as file:
+        json.dump(data, file)
 
 def calc():
+
+    current_time = time.time()
+    data = read_price_indexing_file()
+
+    if current_time - data["last_timestamp"] < 300:
+        return {
+            "AvaxSporePrice": format(data["price_avax"], '.8f'),
+            "BscSporePrice": format(data["price_bsc"], '.8f'),
+            "PriceDiff": "0.00",
+        }
 
     spore_address_avax = get_checksum_address(avax_tokens["spore"]["address"][43114])
     wavax_address = get_checksum_address(avax_tokens["wavax"]["address"][43114])
@@ -147,6 +171,13 @@ def calc():
     # formatted_diff = "{:.2f}%".format(abs(price_diff))
 
     percent_difference = "{:.2f}".format(abs(percent_difference_raw))
+
+
+    with open('price_indexing.json', 'w+') as file:
+        data["last_timestamp"] = current_time
+        data["price_avax"] = spore_price_avax
+        data["price_bsc"] = bsc_spore_price
+        json.dump(data, file)
 
 
 

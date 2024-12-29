@@ -6,7 +6,6 @@ import spore_api_utils as api_utils
 import spore_db_utils as db_utils
 import spore_price_utils as price_utils
 import threading
-
 from cmc_api import handler  # Import the function from cmc_api.py
     
 app = Flask(__name__)
@@ -97,7 +96,6 @@ def get_last_sale():
 @cross_origin(supports_credentials=True)
 def update_nft_db():
     (indexing_in_progress, block_started, status) = db_utils.get_nft_indexing()
-    
     current_block = db_utils.get_ava_latest_block()
     try:
         q = request.args.get('q')
@@ -143,7 +141,6 @@ def get_nft_data():
     except Exception as e:
         print (f"Error: {jsonify(e)}")
         return jsonify({'error': 'Invalid request2'}), 500
-
 
 
 if __name__ == '__main__':

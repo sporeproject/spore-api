@@ -5,7 +5,6 @@ from flask_cors import CORS, cross_origin
 import spore_api_utils as api_utils
 import spore_db_utils as db_utils
 import spore_price_utils as price_utils
-import threading
 from cmc_api import handler  # Import the function from cmc_api.py
     
 app = Flask(__name__)

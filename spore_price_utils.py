@@ -146,6 +146,20 @@ def fetch_market_cap(coin_id):
     except Exception as e:
         print(f"Error fetching market cap: {e}")
         return "0"
+    
+def format_large_number(number):
+    """
+    Formats a large number into a more readable format with suffixes (K, M, B).
+    """
+    if number >= 1_000_000_000:
+        return f"{number // 1_000_000_000}B"
+    elif number >= 1_000_000:
+        return f"{number // 1_000_000}M"
+    elif number >= 1_000:
+        return f"{number // 1_000}K"
+    else:
+        return str(number)
+
 
 def calc():
 
@@ -158,7 +172,11 @@ def calc():
             "AvaxSporePrice": data["price_avax"],
             "BscSporePrice": data["price_bsc"],
             "PriceDiff": data["price_diff"],
-            "MarketCap": data["market_cap"]   
+            "MarketCap": data["market_cap"],
+            "LiquidityAvax": data["liquidity_avax"],
+            "LiquidityBnb": data["liquidity_bnb"],
+            "PercentLiquidityAvax": data["percent_liquidity_avax"],
+            "PercentLiquidityBnb": data["percent_liquidity_bnb"]
         }
 
     spore_address_avax = get_checksum_address(avax_tokens["spore"]["address"][43114])
@@ -171,6 +189,11 @@ def calc():
 
     spore_price_avax = (wavax_balance * avax_usdt_price) / (spore_balance * Decimal(1e3))
 
+    liquidity_avax = wavax_balance * avax_usdt_price * 2
+
+    
+
+
 
     spore_address_bnb = get_checksum_address(bsc_tokens["spore"]["address"][56])
     wbnb_address = get_checksum_address(bsc_tokens["wbnb"]["address"][56])
@@ -181,8 +204,11 @@ def calc():
 
     bsc_spore_price = (bnb_balance * bsc_usdt_price) / (spore_balance_bsc * Decimal(1e3))
 
+    liquidity_bnb = bnb_balance * bsc_usdt_price * 2
 
 
+    percent_liquidity_avax= (liquidity_avax / (liquidity_avax + liquidity_bnb)) * 100
+    percent_liquidity_bnb = (liquidity_bnb / (liquidity_avax + liquidity_bnb)) * 100
 
     percent_difference_raw = ((spore_price_avax - (bnb_balance * bsc_usdt_price) / (spore_balance_bsc * Decimal(1e3))) / spore_price_avax) * 100
 
@@ -193,6 +219,11 @@ def calc():
     market_cap = fetch_market_cap("spore")
 
 
+    formatted_liquidity_avax = format_large_number(liquidity_avax/10**9)
+    formatted_liquidity_bnb = format_large_number(liquidity_bnb/10**9)
+
+
+
 
     with open('price_indexing.json', 'w+') as file:
         data["last_timestamp"] = str(current_time)
@@ -200,6 +231,10 @@ def calc():
         data["price_bsc"] = format(bsc_spore_price*Decimal(1e6), '.8f')
         data["price_diff"] = percent_difference
         data["market_cap"] = market_cap
+        data["liquidity_avax"] = formatted_liquidity_avax
+        data["liquidity_bnb"] = formatted_liquidity_bnb
+        data["percent_liquidity_avax"] = format(percent_liquidity_avax, '.2f')
+        data["percent_liquidity_bnb"] = format(percent_liquidity_bnb, '.2f')
         
         json.dump(data, file)
 
@@ -209,6 +244,11 @@ def calc():
         "AvaxSporePrice": format(spore_price_avax*Decimal(1e6), '.8f'),
         "BscSporePrice": format(bsc_spore_price*Decimal(1e6), '.8f'),
         "PriceDiff": percent_difference,
-        "MarketCap": market_cap
+        "MarketCap": market_cap,
+        "LiquidityAvax": formatted_liquidity_avax,
+        "LiquidityBnb": formatted_liquidity_bnb,
+        "PercentLiquidityAvax": format(percent_liquidity_avax, '.2f'),
+        "PercentLiquidityBnb": format(percent_liquidity_bnb, '.2f')
+
     }
 

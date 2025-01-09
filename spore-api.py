@@ -19,7 +19,9 @@ def hello():
 @app.route('/avax-holders',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def avax_holders():
-    return '2082'
+    return '5336'
+
+
 
 @app.route('/contributors',methods=['GET'])
 @cross_origin(supports_credentials=True)

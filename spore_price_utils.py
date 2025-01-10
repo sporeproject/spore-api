@@ -90,6 +90,13 @@ if not bsc_web3.is_connected():
 avax_web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 bsc_web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
+# Cache for calc results
+cache = {
+    "data": None,
+    "timestamp": time.time()
+}
+
+
 def fetch_asset_price(coin_id):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart?vs_currency=usd&days=1&interval=daily"
     try:
@@ -162,22 +169,26 @@ def format_large_number(number):
 
 
 def calc():
-
+    
+    global cache
     current_time = time.time()
-    data = read_price_indexing_file()
+    print(cache["timestamp"])
+    print(current_time)
+    print(current_time - cache["timestamp"])
 
 
-    if current_time - float(data["last_timestamp"]) < 120:
-        return {
-            "AvaxSporePrice": data["price_avax"],
-            "BscSporePrice": data["price_bsc"],
-            "PriceDiff": data["price_diff"],
-            "MarketCap": data["market_cap"],
-            "LiquidityAvax": data["liquidity_avax"],
-            "LiquidityBnb": data["liquidity_bnb"],
-            "PercentLiquidityAvax": data["percent_liquidity_avax"],
-            "PercentLiquidityBnb": data["percent_liquidity_bnb"]
-        }
+    
+
+    # Serve cached data if still fresh
+    if cache["data"]!=None and (current_time - cache["timestamp"]) < 120:
+
+        
+        return cache["data"]
+    
+
+            
+
+
 
     spore_address_avax = get_checksum_address(avax_tokens["spore"]["address"][43114])
     wavax_address = get_checksum_address(avax_tokens["wavax"]["address"][43114])
@@ -190,10 +201,6 @@ def calc():
     spore_price_avax = (wavax_balance * avax_usdt_price) / (spore_balance * Decimal(1e3))
 
     liquidity_avax = wavax_balance * avax_usdt_price * 2
-
-    
-
-
 
     spore_address_bnb = get_checksum_address(bsc_tokens["spore"]["address"][56])
     wbnb_address = get_checksum_address(bsc_tokens["wbnb"]["address"][56])
@@ -216,27 +223,40 @@ def calc():
 
     percent_difference = "{:.2f}".format(abs(percent_difference_raw))
 
+
     market_cap = fetch_market_cap("spore")
+
+    if market_cap == "0":
+        #open file and get last timestamp
+        data = read_price_indexing_file()
+        last_timestamp = data["last_timestamp"]
+        if current_time - float(last_timestamp) < 120:
+            return data
+
 
 
     formatted_liquidity_avax = format_large_number(liquidity_avax/10**9)
     formatted_liquidity_bnb = format_large_number(liquidity_bnb/10**9)
 
+    # Save updated data
+    updated_data = {
+        "AvaxSporePrice": format(spore_price_avax, '.8f'),
+        "BscSporePrice": format(bsc_spore_price/10**6, '.8f'),
+        "PriceDiff": percent_difference,
+        "MarketCap": market_cap,
+        "LiquidityAvax": formatted_liquidity_avax,
+        "LiquidityBnb": formatted_liquidity_bnb,
+        "PercentLiquidityAvax": format(percent_liquidity_avax, '.2f'),
+        "PercentLiquidityBnb": format(percent_liquidity_bnb, '.2f')
+    }
 
 
 
-    with open('price_indexing.json', 'w+') as file:
-        data["last_timestamp"] = str(current_time)
-        data["price_avax"] = format(spore_price_avax*Decimal(1e6), '.8f')
-        data["price_bsc"] = format(bsc_spore_price*Decimal(1e6), '.8f')
-        data["price_diff"] = percent_difference
-        data["market_cap"] = market_cap
-        data["liquidity_avax"] = formatted_liquidity_avax
-        data["liquidity_bnb"] = formatted_liquidity_bnb
-        data["percent_liquidity_avax"] = format(percent_liquidity_avax, '.2f')
-        data["percent_liquidity_bnb"] = format(percent_liquidity_bnb, '.2f')
-        
-        json.dump(data, file)
+    # Update cache
+    cache["data"] = updated_data
+    cache["timestamp"] = current_time
+
+    write_price_indexing_file(updated_data)
 
 
 

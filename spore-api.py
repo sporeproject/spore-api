@@ -6,7 +6,9 @@ import spore_api_utils as api_utils
 import spore_db_utils as db_utils
 import spore_price_utils as price_utils
 from cmc_api import handler  # Import the function from cmc_api.py
-    
+import logging
+logging.basicConfig(level=logging.INFO)
+
 app = Flask(__name__)
 CORS(app, support_credentials=True)
 
@@ -153,5 +155,5 @@ if __name__ == '__main__':
     # Bind to PORT if defined, otherwise default to 5000.s
     port = int(os.environ.get('PORT', 5001))
     app.debug = True  # Enable debugging
-    app.env = 'development'  # Set the environment to development
+    app.env = 'production'  # Set the environment to development
     app.run(host='127.0.0.1', port=port)

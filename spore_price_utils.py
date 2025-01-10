@@ -172,10 +172,6 @@ def calc():
     
     global cache
     current_time = time.time()
-    print(cache["timestamp"])
-    print(current_time)
-    print(current_time - cache["timestamp"])
-
 
     
 
@@ -231,8 +227,10 @@ def calc():
         data = read_price_indexing_file()
         last_timestamp = data["last_timestamp"]
         if current_time - float(last_timestamp) < 120:
+            # do not return the last_timestam
+            data.pop("last_timestamp")
             return data
-
+    
 
 
     formatted_liquidity_avax = format_large_number(liquidity_avax/10**9)
@@ -256,6 +254,8 @@ def calc():
     cache["data"] = updated_data
     cache["timestamp"] = current_time
 
+    # add timestamp updated data
+    updated_data["last_timestamp"] = current_time
     write_price_indexing_file(updated_data)
 
 

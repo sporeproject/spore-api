@@ -4,7 +4,7 @@ import math
 import requests
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation  # <-- Import InvalidOperation
 import os
 
 # Token configurations
@@ -173,26 +173,18 @@ def calc():
     global cache
     current_time = time.time()
 
-    
-
     # Serve cached data if still fresh
-    if cache["data"]!=None and (current_time - cache["timestamp"]) < 120:
-
-        
+    if cache["data"] != None and (current_time - cache["timestamp"]) < 120:
+        print("Serving cached data")
+        print(cache["data"])
         return cache["data"]
     
-
-            
-
-
-
     spore_address_avax = get_checksum_address(avax_tokens["spore"]["address"][43114])
     wavax_address = get_checksum_address(avax_tokens["wavax"]["address"][43114])
     
     spore_balance = get_balance(avax_web3, spore_address_avax, avax_LP, spore_abi)
     wavax_balance = get_balance(avax_web3, wavax_address, avax_LP, spore_abi)
     avax_usdt_price = fetch_asset_price("avalanche-2")
-
 
     spore_price_avax = (wavax_balance * avax_usdt_price) / (spore_balance * Decimal(1e3))
 
@@ -209,37 +201,42 @@ def calc():
 
     liquidity_bnb = bnb_balance * bsc_usdt_price * 2
 
+    total_liquidity = liquidity_avax + liquidity_bnb
 
-    percent_liquidity_avax= (liquidity_avax / (liquidity_avax + liquidity_bnb)) * 100
-    percent_liquidity_bnb = (liquidity_bnb / (liquidity_avax + liquidity_bnb)) * 100
+    # Check to avoid division by zero in calculating liquidity percentages
+    if total_liquidity == 0:
+        percent_liquidity_avax = 0
+        percent_liquidity_bnb = 0
+    else:
+        percent_liquidity_avax = (liquidity_avax / (liquidity_avax + liquidity_bnb)) * 100
+        percent_liquidity_bnb = (liquidity_bnb / (liquidity_avax + liquidity_bnb)) * 100
 
-    percent_difference_raw = ((spore_price_avax - (bnb_balance * bsc_usdt_price) / (spore_balance_bsc * Decimal(1e3))) / spore_price_avax) * 100
-
-    # formatted_diff = "{:.2f}%".format(abs(price_diff))
+    # Wrap in try/except to catch decimal.InvalidOperation (zero division, etc.)
+    try:
+        percent_difference_raw = (
+            (spore_price_avax - ((bnb_balance * bsc_usdt_price) / (spore_balance_bsc * Decimal(1e3))))
+            / spore_price_avax
+        ) * 100
+    except InvalidOperation:
+        percent_difference_raw = Decimal(0)  # Fallback if spore_balance_bsc = 0 or other invalid operation
 
     percent_difference = "{:.2f}".format(abs(percent_difference_raw))
-
 
     market_cap = fetch_market_cap("spore")
 
     if market_cap == "0":
-        #open file and get last timestamp
         data = read_price_indexing_file()
         last_timestamp = data["last_timestamp"]
         if current_time - float(last_timestamp) < 120:
-            # do not return the last_timestam
             data.pop("last_timestamp")
             return data
-    
 
+    formatted_liquidity_avax = format_large_number(liquidity_avax / 10**9)
+    formatted_liquidity_bnb = format_large_number(liquidity_bnb / 10**9)
 
-    formatted_liquidity_avax = format_large_number(liquidity_avax/10**9)
-    formatted_liquidity_bnb = format_large_number(liquidity_bnb/10**9)
-
-    # Save updated data
     updated_data = {
-        "AvaxSporePrice": format(spore_price_avax, '.8f'),
-        "BscSporePrice": format(bsc_spore_price/10**6, '.8f'),
+        "AvaxSporePrice": format(spore_price_avax/ 10**6, '.8f'),
+        "BscSporePrice": format(bsc_spore_price / 10**6, '.8f'),
         "PriceDiff": percent_difference,
         "MarketCap": market_cap,
         "LiquidityAvax": formatted_liquidity_avax,
@@ -248,27 +245,21 @@ def calc():
         "PercentLiquidityBnb": format(percent_liquidity_bnb, '.2f')
     }
 
-
-
-    # Update cache
     cache["data"] = updated_data
     cache["timestamp"] = current_time
 
-    # add timestamp updated data
     updated_data["last_timestamp"] = current_time
     write_price_indexing_file(updated_data)
 
-
+    print(updated_data)
 
     return {
-        "AvaxSporePrice": format(spore_price_avax*Decimal(1e6), '.8f'),
-        "BscSporePrice": format(bsc_spore_price*Decimal(1e6), '.8f'),
+        "AvaxSporePrice": format(spore_price_avax * Decimal(1e6), '.8f'),
+        "BscSporePrice": format(bsc_spore_price * Decimal(1e6), '.8f'),
         "PriceDiff": percent_difference,
         "MarketCap": market_cap,
         "LiquidityAvax": formatted_liquidity_avax,
         "LiquidityBnb": formatted_liquidity_bnb,
         "PercentLiquidityAvax": format(percent_liquidity_avax, '.2f'),
         "PercentLiquidityBnb": format(percent_liquidity_bnb, '.2f')
-
     }
-

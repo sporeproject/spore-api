@@ -177,7 +177,7 @@ def calc():
     if cache["data"] != None and (current_time - cache["timestamp"]) < 120:
         print("Serving cached data")
         print(cache["data"])
-        cache["data"].pop("last_timestamp")
+        # cache["data"].pop("last_timestamp")
         return cache["data"]
     
 

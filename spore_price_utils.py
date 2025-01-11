@@ -177,7 +177,10 @@ def calc():
     if cache["data"] != None and (current_time - cache["timestamp"]) < 120:
         print("Serving cached data")
         print(cache["data"])
+        cache["data"].pop("last_timestamp")
         return cache["data"]
+    
+
     
     spore_address_avax = get_checksum_address(avax_tokens["spore"]["address"][43114])
     wavax_address = get_checksum_address(avax_tokens["wavax"]["address"][43114])
@@ -224,7 +227,7 @@ def calc():
 
     market_cap = fetch_market_cap("spore")
 
-    if market_cap == "0":
+    if market_cap == "0" or spore_price_avax == '0.00000000' or bsc_spore_price == '0.00000000':
         data = read_price_indexing_file()
         last_timestamp = data["last_timestamp"]
         if current_time - float(last_timestamp) < 120:
@@ -233,10 +236,12 @@ def calc():
 
     formatted_liquidity_avax = format_large_number(liquidity_avax / 10**9)
     formatted_liquidity_bnb = format_large_number(liquidity_bnb / 10**9)
-
+    print(spore_price_avax)
+    print(format(spore_price_avax* 10**6, '.8f'))
+    print("here")
     updated_data = {
-        "AvaxSporePrice": format(spore_price_avax/ 10**6, '.8f'),
-        "BscSporePrice": format(bsc_spore_price / 10**6, '.8f'),
+        "AvaxSporePrice": format(spore_price_avax* 10**6, '.8f'),
+        "BscSporePrice": format(bsc_spore_price * 10**6, '.8f'),
         "PriceDiff": percent_difference,
         "MarketCap": market_cap,
         "LiquidityAvax": formatted_liquidity_avax,
@@ -247,6 +252,10 @@ def calc():
 
     cache["data"] = updated_data
     cache["timestamp"] = current_time
+
+    print("cache")
+    print(cache)
+    print(updated_data)
 
     updated_data["last_timestamp"] = current_time
     write_price_indexing_file(updated_data)

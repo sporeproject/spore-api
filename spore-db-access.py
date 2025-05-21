@@ -10,7 +10,7 @@ with open('abi/nftv1_abi.json') as abi:
 
 
 # avax_url= os.getenv("RPC_URL", "https://api.avax.network/ext/bc/C/rpc")
-bsc_url="https://bsc-dataseed1.defibit.io/"
+bsc_url="https://bsc-dataseed.binance.org"
 
 spore_address_avalanche="0x6e7f5C0b9f4432716bDd0a77a3601291b9D9e985"
 spore_address_bsc="0x33A3d962955A3862C8093D1273344719f03cA17C"

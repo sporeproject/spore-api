@@ -1,7 +1,7 @@
 import psycopg2, os
 from dotenv import load_dotenv
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+# from web3.middleware import geth_poa_middleware
 from web3._utils.filters import construct_event_filter_params
 from web3._utils.events import get_event_data
 from eth_abi.codec import ABICodec
@@ -89,7 +89,7 @@ def connect_and_get_Bought_event():
     with open('abi/nftv1_abi.json') as abi:
         nftv1_abi = json.load(abi)
     web3 = Web3(Web3.HTTPProvider(chain_url))
-    web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    # web3.middleware_onion.inject(geth_poa_middleware, layer=0)
     # print("clientVersion: ",web3.client_version)
     # print("isConnected: ",web3.is_connected())
     contract = web3.eth.contract(address=contract_address, abi=nftv1_abi)
@@ -111,7 +111,7 @@ def get_ava_latest_block():
     try:
         chain_url=  "https://api.avax.network/ext/bc/C/rpc"
         web3 = Web3(Web3.HTTPProvider(chain_url))
-        web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        # web3.middleware_onion.inject(geth_poa_middleware, layer=0)
         latest_block= web3.eth.get_block('latest')['number']
         return latest_block
     except Exception as e:
@@ -216,7 +216,7 @@ def get_token_price(tokenId):
     with open('abi/nftv1_abi.json') as abi:
         nftv1_abi = json.load(abi)
     web3 = Web3(Web3.HTTPProvider(chain_url))
-    web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    # web3.middleware_onion.inject(geth_poa_middleware, layer=0)
     contract = web3.eth.contract(address=contract_address, abi=nftv1_abi)
 
     bazzar_mapping = contract.functions.Bazaar(tokenId).call()
@@ -232,7 +232,7 @@ def index_nft_price_data():
     current_block = get_last_block("nft_prices")
     chain_url=  "https://api.avax.network/ext/bc/C/rpc"
     web3 = Web3(Web3.HTTPProvider(chain_url))
-    web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    # web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
     latest_block= web3.eth.get_block('latest')['number']
     if current_block<latest_block:

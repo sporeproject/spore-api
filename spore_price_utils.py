@@ -3,7 +3,7 @@ import time
 import math
 import requests
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+# from web3.middleware import geth_poa_middleware
 from decimal import Decimal, InvalidOperation  # <-- Import InvalidOperation
 import os
 
@@ -87,8 +87,8 @@ if not avax_web3.is_connected():
 if not bsc_web3.is_connected():
     raise ConnectionError("Binance Smart Chain Web3 connection failed.")
 
-avax_web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-bsc_web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+# avax_web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+# bsc_web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 # Cache for calc results
 cache = {

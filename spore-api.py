@@ -20,6 +20,9 @@ def hello():
 @app.route('/avax-holders',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def avax_holders():
+    origin = request.headers.get('Origin', '')
+    if 'spore.earth' in origin:
+        return 'sporeproject.com is the official domain of Spore. Beware of impersonators.'
     return '5336'
 
 
@@ -27,6 +30,9 @@ def avax_holders():
 @app.route('/contributors',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def current_contributors():
+    origin = request.headers.get('Origin', '')
+    if 'spore.earth' in origin:
+        return jsonify('sporeproject.com is the official domain of Spore. Beware of impersonators.')
     #open json file containing contributors
     with open('contributors.json') as json_file:
         json_data = json.load(json_file)
@@ -145,19 +151,6 @@ def get_nft_data():
         print (f"Error: {jsonify(e)}")
         return jsonify({'error': 'Invalid request2'}), 500
 
-@app.after_request
-def add_disclaimer_if_needed(response):
-    origin = request.headers.get('Origin', '')
-    if 'spore.earth' in origin:
-        # Modify JSON response if possible
-        if response.content_type == 'application/json' and response.get_json(silent=True):
-            data = response.get_json()
-            data['disclaimer'] = 'sporeproject.com is the official domain of Spore. Beware of impersonators.'
-            response.set_data(json.dumps(data))
-        else:
-            # Add fallback header
-            response.headers['X-Spore-Disclaimer'] = 'sporeproject.com is the official domain of Spore'
-    return response
 
 # if __name__ == '__main__':
 #     # Bind to PORT if defined, otherwise default to 5000.

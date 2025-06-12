@@ -145,6 +145,19 @@ def get_nft_data():
         print (f"Error: {jsonify(e)}")
         return jsonify({'error': 'Invalid request2'}), 500
 
+@app.after_request
+def add_disclaimer_if_needed(response):
+    origin = request.headers.get('Origin', '')
+    if 'spore.earth' in origin:
+        # Modify JSON response if possible
+        if response.content_type == 'application/json' and response.get_json(silent=True):
+            data = response.get_json()
+            data['disclaimer'] = 'sporeproject.com is the official domain of Spore. Beware of impersonators.'
+            response.set_data(json.dumps(data))
+        else:
+            # Add fallback header
+            response.headers['X-Spore-Disclaimer'] = 'sporeproject.com is the official domain of Spore'
+    return response
 
 # if __name__ == '__main__':
 #     # Bind to PORT if defined, otherwise default to 5000.

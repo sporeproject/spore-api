@@ -41,12 +41,18 @@ def current_contributors():
 @app.route('/token/prices',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def get_token_prices():
+    origin = request.headers.get('Origin', '')
+    if 'spore.earth' in origin:
+        return False    
     data=price_utils.calc()
     return jsonify(data)
 
 @app.route('/last-indexed',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def last_indexed():
+    origin = request.headers.get('Origin', '')
+    if 'spore.earth' in origin:
+        return jsonify('sporeproject.com is the official domain of Spore. Beware of impersonators.')
     #you will return a code 502 if the database is not connected
     if not api_utils.verify_db_connection():
         return jsonify({'error': 'Database not connected'}), 502
@@ -72,6 +78,9 @@ def cmc_api():
 @app.route('/nft/get_total_volume',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def get_total_volume():
+    origin = request.headers.get('Origin', '')
+    if 'spore.earth' in origin:
+        return jsonify('sporeproject.com is the official domain of Spore. Beware of impersonators.')
     if not api_utils.verify_db_connection():
         return jsonify({'error': 'Database not connected'}), 502
     total_volume = db_utils.nft_get_total_volume()
@@ -82,6 +91,9 @@ def get_total_volume():
 @app.route('/nft/get_floor_price',methods=['GET'])
 @cross_origin(supports_credentials=True)
 def get_floor_price():
+    origin = request.headers.get('Origin', '')
+    if 'spore.earth' in origin:
+        return jsonify('sporeproject.com is the official domain of Spore. Beware of impersonators.')
     if not api_utils.verify_db_connection():
         return jsonify({'error': 'Database not connected'}), 502
     floor_price = db_utils.nft_get_floor_price()

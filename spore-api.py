@@ -6,8 +6,8 @@ import spore_api_utils as api_utils
 import spore_db_utils as db_utils
 import spore_price_utils as price_utils
 from cmc_api import handler  # Import the function from cmc_api.py
-import logging
-logging.basicConfig(level=logging.INFO)
+from login_utils import create_challenge, verify_login, is_session_valid, logoff
+
 
 app = Flask(__name__)
 CORS(app, support_credentials=True)
@@ -163,6 +163,35 @@ def get_nft_data():
         print (f"Error: {jsonify(e)}")
         return jsonify({'error': 'Invalid request2'}), 500
 
+
+
+@app.route("/api/challenge")
+def api_challenge():
+    wallet = request.args.get("wallet", "").lower()
+    message = create_challenge(wallet)
+    return jsonify({"message": message})
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.json
+    session_id = verify_login(data["wallet"].lower(), data["message"], data["signature"])
+    if session_id:
+        return jsonify({"session_id": session_id})
+    return jsonify({"error": "Invalid login"}), 401
+
+@app.route("/api/session")
+def api_session():
+    session_id = request.headers.get("Authorization", "").replace("Bearer ", "")
+    wallet = is_session_valid(session_id)
+    if wallet:
+        return jsonify({"valid": True, "wallet": wallet})
+    return jsonify({"valid": False}), 401
+
+@app.route("/api/logoff", methods=["POST"])
+def api_logoff():
+    session_id = request.headers.get("Authorization", "").replace("Bearer ", "")
+    logoff(session_id)
+    return jsonify({"logged_off": True})
 
 # if __name__ == '__main__':
 #     # Bind to PORT if defined, otherwise default to 5000.

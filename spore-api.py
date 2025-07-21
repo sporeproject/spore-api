@@ -165,13 +165,13 @@ def get_nft_data():
 
 
 
-@app.route("/api/challenge")
+@app.route("/ipfs/challenge")
 def api_challenge():
     wallet = request.args.get("wallet", "").lower()
     message = create_challenge(wallet)
     return jsonify({"message": message})
 
-@app.route("/api/login", methods=["POST"])
+@app.route("/ipfs/login", methods=["POST"])
 def api_login():
     data = request.json
     session_id = verify_login(data["wallet"].lower(), data["message"], data["signature"])
@@ -179,7 +179,7 @@ def api_login():
         return jsonify({"session_id": session_id})
     return jsonify({"error": "Invalid login"}), 401
 
-@app.route("/api/session")
+@app.route("/ipfs/session")
 def api_session():
     session_id = request.headers.get("Authorization", "").replace("Bearer ", "")
     wallet = is_session_valid(session_id)
@@ -187,7 +187,7 @@ def api_session():
         return jsonify({"valid": True, "wallet": wallet})
     return jsonify({"valid": False}), 401
 
-@app.route("/api/logoff", methods=["POST"])
+@app.route("/ipfs/logoff", methods=["POST"])
 def api_logoff():
     session_id = request.headers.get("Authorization", "").replace("Bearer ", "")
     logoff(session_id)

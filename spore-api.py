@@ -249,14 +249,16 @@ def ipfs_unpin():
 
     return jsonify(result), 200
 
-# if __name__ == '__main__':
-#     # Bind to PORT if defined, otherwise default to 5000.
-#     port = int(os.environ.get('PORT', 5001))
-#     app.run(host='127.0.0.1', port=port)
+if os.getenv("ENVIRONMENT", "production"):
+    if __name__ == '__main__':
+        # Bind to PORT if defined, otherwise default to 5000.
+        port = int(os.environ.get('PORT', 5001))
+        app.run(host='127.0.0.1', port=port)
+        app.env = 'production'  # Set the environment to development
 
-if __name__ == '__main__':
-    # Bind to PORT if defined, otherwise default to 5000.s
-    port = int(os.environ.get('PORT', 5001))
-    app.debug = True  # Enable debugging
-    app.env = 'production'  # Set the environment to development
-    app.run(host='127.0.0.1', port=port)
+else:
+    if __name__ == '__main__':
+        # Bind to PORT if defined, otherwise default to 5000.s
+        port = int(os.environ.get('PORT', 5001))
+        app.debug = True  # Enable debugging
+        app.run(host='127.0.0.1', port=port)

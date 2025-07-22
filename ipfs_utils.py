@@ -323,7 +323,7 @@ def get_user_info(session_id):
     data = {
         "wallet": wallet,
         "used": 0,
-        "quota": 1000,  # quota in MB
+        "quota": 100,  # quota in MB
         "files": []
     }
 

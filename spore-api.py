@@ -1,13 +1,14 @@
 import os
 import json
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS, cross_origin
 import spore_api_utils as api_utils
 import spore_db_utils as db_utils
 import spore_price_utils as price_utils
 from cmc_api import handler  # Import the function from cmc_api.py
-from login_utils import create_challenge, verify_login, is_session_valid, logoff
-
+from ipfs_utils import create_challenge, verify_login, is_session_valid, logoff, get_user_info, upload_and_pin_file, unpin_file_by_cid
+import tempfile
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app, support_credentials=True)
@@ -187,11 +188,66 @@ def api_session():
         return jsonify({"valid": True, "wallet": wallet})
     return jsonify({"valid": False}), 401
 
+@app.route("/ipfs/user/info")
+def ipfs_user_info():
+    session_id = request.headers.get("Authorization", "").replace("Bearer ", "")
+    data = get_user_info(session_id)
+    if not data:
+        return jsonify({"error": "Invalid session"}), 401
+    return jsonify(data)
+
 @app.route("/ipfs/logoff", methods=["POST"])
 def api_logoff():
     session_id = request.headers.get("Authorization", "").replace("Bearer ", "")
     logoff(session_id)
     return jsonify({"logged_off": True})
+
+
+@app.route("/ipfs/upload", methods=["POST"])
+def ipfs_upload():
+    session_id = request.headers.get("Authorization", "").replace("Bearer ", "")
+    wallet = is_session_valid(session_id)
+    if not wallet:
+        return jsonify({"error": "Invalid session"}), 401
+
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files["file"]
+    filename = secure_filename(file.filename)
+
+    # Save file to temp file
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        file.save(tmp)
+        tmp_path = tmp.name
+
+    result = upload_and_pin_file(session_id, tmp_path, filename=filename)
+
+    # Clean up temp file
+    os.unlink(tmp_path)
+
+    if "error" in result:
+        return jsonify(result), 400
+
+    return jsonify(result), 200
+
+@app.route("/ipfs/unpin", methods=["POST"])
+def ipfs_unpin():
+    session_id = request.headers.get("Authorization", "").replace("Bearer ", "")
+    wallet = is_session_valid(session_id)
+    if not wallet:
+        return jsonify({"error": "Invalid session"}), 401
+
+    data = request.get_json()
+    cid = data.get("cid")
+    if not cid:
+        return jsonify({"error": "Missing CID"}), 400
+
+    result = unpin_file_by_cid(session_id, cid)
+    if "error" in result:
+        return jsonify(result), 400
+
+    return jsonify(result), 200
 
 # if __name__ == '__main__':
 #     # Bind to PORT if defined, otherwise default to 5000.

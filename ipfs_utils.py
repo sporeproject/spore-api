@@ -154,12 +154,10 @@ def ipfs_node_stats():
 
 
 def check_eligibility(wallet):
-    # Load env vars & ABIs
-    RPC_URL = os.getenv("RPC_URL", "https://api.avax.network/ext/bc/C/rpc")
-    w3 = Web3(Web3.HTTPProvider(RPC_URL))
+    if not wallet:
+        return None
 
-    SPORE_ADDRESS = Web3.to_checksum_address("0x6e7f5C0b9f4432716bDd0a77a3601291b9D9e985")
-    NFT_ADDRESS = Web3.to_checksum_address("0xc2457F6Eb241C891EF74E02CCd50E5459c2E28Ea")
+    wallet = Web3.to_checksum_address(wallet)
 
     with open("abi/spore_abi.json") as f:
         ERC20_ABI = json.load(f)
@@ -167,34 +165,74 @@ def check_eligibility(wallet):
     with open("abi/nftv1_abi.json") as f:
         NFT_ABI = json.load(f)
 
-    spore_contract = w3.eth.contract(address=SPORE_ADDRESS, abi=ERC20_ABI)
-    nft_contract = w3.eth.contract(address=NFT_ADDRESS, abi=NFT_ABI)
-
-    if not wallet:
-        return None
-
-    wallet = Web3.to_checksum_address(wallet)
-
-    try:
-        spore_balance = spore_contract.functions.balanceOf(wallet).call()
-        nft_balance = nft_contract.functions.balanceOf(wallet).call()
-
-        eligible = spore_balance > 0 or nft_balance > 0
-
-        return {
-            "wallet": wallet,
-            "eligible": eligible,
-            "spore_balance": str(spore_balance),
-            "nft_balance": nft_balance,
+    chains = [
+        {
+            "name": "avax",
+            "rpc": "https://api.avax.network/ext/bc/C/rpc",
+            "spore_address": "0x6e7f5C0b9f4432716bDd0a77a3601291b9D9e985",
+            "nft_address": "0xc2457F6Eb241C891EF74E02CCd50E5459c2E28Ea"
+        },
+        {
+            "name": "bsc",
+            "rpc": "https://bsc-dataseed.binance.org",
+            "spore_address": "0x33A3d962955A3862C8093D1273344719f03cA17C",
+            "nft_address": None  # replace with BSC NFT if needed
         }
-    except Exception as e:
-        print(f"Error checking eligibility: {e}")
-        return {
-            "wallet": wallet,
-            "eligible": False,
-            "spore_balance": "0",
-            "nft_balance": 0,
-        }
+    ]
+
+    total_spore = 0
+    total_nft = 0
+    eligible = False
+    details = {}
+
+    for chain in chains:
+        try:
+            w3 = Web3(Web3.HTTPProvider(chain["rpc"]))
+            spore_contract = w3.eth.contract(
+                address=Web3.to_checksum_address(chain["spore_address"]),
+                abi=ERC20_ABI
+            )
+            spore_balance = spore_contract.functions.balanceOf(wallet).call()
+            total_spore += spore_balance
+
+            nft_balance = 0
+            if chain["nft_address"]:
+                nft_contract = w3.eth.contract(
+                    address=Web3.to_checksum_address(chain["nft_address"]),
+                    abi=NFT_ABI
+                )
+                nft_balance = nft_contract.functions.balanceOf(wallet).call()
+                total_nft += nft_balance
+
+            details[chain["name"]] = {
+                "spore_balance": spore_balance,
+                "nft_balance": nft_balance
+            }
+
+            if spore_balance > 0 or nft_balance > 0:
+                eligible = True
+
+        except Exception as e:
+            print(f"Error checking {chain['name']}: {e}")
+            details[chain["name"]] = {
+                "spore_balance": "0",
+                "nft_balance": 0,
+                "error": str(e)
+            }
+
+    # Convert total_spore to trillions
+    # NOTE: Spore is 9 decimals (like gwei) so to show "T" we divide by 1e12
+    total_spore_T = round(total_spore / 1e21, 2)
+
+    return {
+        "wallet": wallet,
+        "eligible": eligible,
+        "spore_balance": total_spore,
+        "nft_balance": total_nft,
+        "total_spore_balance": str(total_spore),
+        "total_spore_balance_T": f"{total_spore_T}T",
+        "details": details
+    }
 
 
 def upload_and_pin_file(session_id, file_path, filename=None):
@@ -361,6 +399,7 @@ def get_user_info(session_id):
         data.update({
             "eligible": eligibility["eligible"],
             "spore_balance": eligibility["spore_balance"],
+            "total_spore_balance_T": eligibility["total_spore_balance_T"],
             "nft_balance": eligibility["nft_balance"],
         })
     else:
@@ -368,6 +407,7 @@ def get_user_info(session_id):
             "eligible": False,
             "spore_balance": "0",
             "nft_balance": 0,
+            "total_spore_balance_T":0
         })
     
     # Add node-wide info

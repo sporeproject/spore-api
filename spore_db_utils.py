@@ -11,9 +11,6 @@ import threading
 import time
 
 
-
-
-
 load_dotenv()
 
 def verify_db_connection():
@@ -33,7 +30,7 @@ def verify_db_connection():
 
 def initialize_connection():
     try:
-        conn = psycopg2.connect(database=os.getenv("DATABASE_NAME", "spore_db"),
+        conn = psycopg2.connect(database=os.getenv("database", "spore_db"),
                                 host=os.getenv("host", "localhost"),
                                 user=os.getenv("user", "postgres"),
                                 password=os.getenv("password", ""),
